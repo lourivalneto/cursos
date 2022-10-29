@@ -28,13 +28,14 @@ import br.edu.unichristus.lit.api.v1.assembler.input.UnidadeDisassembler;
 import br.edu.unichristus.lit.api.v1.assembler.output.UnidadeAssembler;
 import br.edu.unichristus.lit.api.v1.model.input.UnidadeInput;
 import br.edu.unichristus.lit.api.v1.model.output.UnidadeModel;
+import br.edu.unichristus.lit.api.v1.openapi.controller.UnidadeControllerOpenApi;
 import br.edu.unichristus.lit.domain.model.Unidade;
 import br.edu.unichristus.lit.domain.repository.UnidadeRepository;
 import br.edu.unichristus.lit.domain.service.UnidadeService;
 
 @RestController
 @RequestMapping(path = "/v1/unidades")
-public class UnidadeController {
+public class UnidadeController implements UnidadeControllerOpenApi {
 
 	@Autowired
 	private UnidadeRepository unidadeRepository;
@@ -48,6 +49,7 @@ public class UnidadeController {
 	@Autowired
 	private UnidadeDisassembler unidadeDisassembler;
 
+	@Override
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<CollectionModel<UnidadeModel>> listar(final ServletWebRequest request) {
 		ShallowEtagHeaderFilter.disableContentCaching(request.getRequest());
@@ -65,6 +67,7 @@ public class UnidadeController {
 				.body(unidadesModel);
 	}
 
+	@Override
 	@GetMapping(value = "/{unidadeId}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<UnidadeModel> buscar(@PathVariable final Long unidadeId, final ServletWebRequest request) {
 		ShallowEtagHeaderFilter.disableContentCaching(request.getRequest());
@@ -81,6 +84,7 @@ public class UnidadeController {
 		return ResponseEntity.ok().cacheControl(CacheControl.maxAge(3, TimeUnit.DAYS)).eTag(eTag).body(unidadeModel);
 	}
 
+	@Override
 	@PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(HttpStatus.CREATED)
 	public UnidadeModel adicionar(@RequestBody @Valid final UnidadeInput unidadeInput) {
@@ -89,6 +93,7 @@ public class UnidadeController {
 		return this.unidadeAssembler.toModel(unidade);
 	}
 
+	@Override
 	@PutMapping(value = "/{unidadeId}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public UnidadeModel atualizar(@PathVariable final Long unidadeId,
 			@RequestBody @Valid final UnidadeInput unidadeInput) {
@@ -99,6 +104,7 @@ public class UnidadeController {
 		return this.unidadeAssembler.toModel(unidadeAtual);
 	}
 
+	@Override
 	@DeleteMapping("/{unidadeId}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void remover(@PathVariable final Long unidadeId) {

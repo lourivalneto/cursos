@@ -32,6 +32,7 @@ import br.edu.unichristus.lit.api.v1.assembler.input.CursoDisassembler;
 import br.edu.unichristus.lit.api.v1.assembler.output.CursoAssembler;
 import br.edu.unichristus.lit.api.v1.model.input.CursoInput;
 import br.edu.unichristus.lit.api.v1.model.output.CursoModel;
+import br.edu.unichristus.lit.api.v1.openapi.controller.CursoControllerOpeApi;
 import br.edu.unichristus.lit.core.data.PageWrapper;
 import br.edu.unichristus.lit.domain.filter.CursoFilter;
 import br.edu.unichristus.lit.domain.model.Curso;
@@ -41,7 +42,7 @@ import br.edu.unichristus.lit.infrastructure.repository.specs.CursoSpecs;
 
 @RestController
 @RequestMapping(path = "/v1/cursos")
-public class CursoController {
+public class CursoController implements CursoControllerOpeApi {
 
 	@Autowired
 	private CursoRepository cursoRepository;
@@ -58,6 +59,7 @@ public class CursoController {
 	@Autowired
 	private PagedResourcesAssembler<Curso> pagedResourcesAssembler;
 
+	@Override
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<CollectionModel<CursoModel>> list(final CursoFilter filter, @PageableDefault(size = 10) final Pageable pageable, final ServletWebRequest request) {
 		ShallowEtagHeaderFilter.disableContentCaching(request.getRequest());
@@ -69,12 +71,14 @@ public class CursoController {
 		if (request.checkNotModified(eTag)) {
 			return null;
 		}
-		final Page<Curso> pedidosPage = new PageWrapper<>(this.cursoRepository.findAll(
-				CursoSpecs.usingFilter(filter), pageable), pageable);
+		Page<Curso> pedidosPage = this.cursoRepository.findAll(
+				CursoSpecs.usingFilter(filter), pageable);
+		pedidosPage = new PageWrapper<>(pedidosPage, pageable);
 		final PagedModel<CursoModel> cursosPagedModel = this.pagedResourcesAssembler.toModel(pedidosPage, cursoAssembler);
 		return ResponseEntity.ok().cacheControl(CacheControl.maxAge(3, TimeUnit.DAYS).cachePublic()).eTag(eTag).body(cursosPagedModel);
 	}
 
+	@Override
 	@GetMapping(value = "/{cursoId}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<CursoModel> search(@PathVariable final Long cursoId, final ServletWebRequest request) {
 		ShallowEtagHeaderFilter.disableContentCaching(request.getRequest());
@@ -91,6 +95,7 @@ public class CursoController {
 		return ResponseEntity.ok().cacheControl(CacheControl.maxAge(3, TimeUnit.DAYS)).eTag(eTag).body(cursoModel);
 	}
 
+	@Override
 	@PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(HttpStatus.CREATED)
 	public CursoModel add(@RequestBody @Valid final CursoInput cursoInput) {
@@ -99,6 +104,7 @@ public class CursoController {
 		return this.cursoAssembler.toModel(curso);
 	}
 
+	@Override
 	@PutMapping(value = "/{cursoId}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public CursoModel update(@PathVariable final Long cursoId, @RequestBody @Valid final CursoInput cursoInput) {
 		Curso cursoAtual = this.cursoService.fetchOrFail(cursoId);
@@ -107,6 +113,7 @@ public class CursoController {
 		return this.cursoAssembler.toModel(cursoAtual);
 	}
 
+	@Override
 	@DeleteMapping("/{cursoId}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void remove(@PathVariable final Long cursoId) {
